@@ -1,0 +1,65 @@
+\RequirePackage{fontspec}
+\RequirePackage{fancyhdr}
+\RequirePackage{textpos}
+\RequirePackage{unicode-math}
+\RequirePackage{geometry}
+\RequirePackage{tikz-page}
+\RequirePackage{expl3}
+\RequirePackage{titlesec}
+\RequirePackage{setspace}
+\RequirePackage{xparse}
+
+
+\ExplSyntaxOn
+\newcommand{\LoadTeXGyreFont}[2]{
+	\use:c {set#1font} {texgyre#2-regular}[
+		Extension=.otf,
+		BoldFont=texgyre#2-bold,
+		ItalicFont=texgyre#2-italic,
+		BoldItalicFont=texgyre#2-bolditalic,
+	]
+}
+\ExplSyntaxOff
+
+\LoadTeXGyreFont{main}{heros}
+\LoadTeXGyreFont{sans}{termes}
+\LoadTeXGyreFont{mono}{cursor}
+\setmathfont{FiraMath-Regular}[Extension=.otf]
+
+\geometry{margin=1in}
+
+\ExplSyntaxOn
+
+\tl_new:N \l_cv_tmpa_tl
+\tl_new:N \l_cv_tmpb_tl
+
+\cs_set:Npn \cv_declare_prop_set:nn #1#2 {
+	\exp_args:Nc \newcommand{SetCV#1}[1]{
+		\tl_gset:cn {#2} {##1}
+	}
+}
+
+\prop_new:N \g_cv_prop_conv_prop
+
+\DeclareDocumentCommand{\DeclareCVProperty}{om}{
+	\IfValueTF{#1}{
+		\tl_set:Nn \l_cv_tmpa_tl {g_cv_#1_tl}
+	}{
+		\tl_set:Nn \l_cv_tmpa_tl {g_cv_\text_lowercase:n {#2}_tl}
+	}
+	
+	\tl_new:c {\l_cv_tmpa_tl}
+	\exp_args:Nxx \cv_declare_prop_set:nn {#2} {\l_cv_tmpa_tl}
+	\prop_gput:Nnx \g_cv_prop_conv_prop {#2} {
+		\l_cv_tmpa_tl
+	}
+}
+
+\DeclareCVProperty{Name}
+\DeclareCVProperty[job_title]{JobTitle}
+\DeclareCVProperty{Phone}
+\DeclareCVProperty{Email}
+
+
+\ExplSyntaxOff
+

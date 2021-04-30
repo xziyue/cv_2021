@@ -1,0 +1,27 @@
+% !TeX TS-program = xelatex
+
+\documentclass[letterpaper, 11pt]{article}
+\usepackage{alancv}
+\usepackage{datetime2}
+
+\begin{document}
+
+\SetCVName{My Name}
+\SetCVJobTitle{Research Assistant}
+\SetCVPhone{510-684-2200}
+\SetCVEmail{xiang71@purdue.edu}
+
+\ExplSyntaxOn
+\begin{minipage}{0.6\linewidth}
+\par {\huge \g_cv_name_tl}
+\end{minipage}%
+\begin{minipage}{0.4\linewidth}
+content...
+\end{minipage}
+\ExplSyntaxOff
+
+$abc$
+
+\DTMNow
+
+\end{document}
