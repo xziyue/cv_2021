@@ -5,10 +5,23 @@
 \RequirePackage{geometry}
 \RequirePackage{tikz-page}
 \RequirePackage{expl3}
-\RequirePackage{titlesec}
+\RequirePackage{enumitem}
+\RequirePackage{longtable}
+\RequirePackage{adjustbox}
+\RequirePackage[explicit]{titlesec}
 \RequirePackage{setspace}
 \RequirePackage{xparse}
+\RequirePackage{microtype}
+\RequirePackage{csquotes}
+\RequirePackage[english]{babel}
+\RequirePackage{zref}
+\RequirePackage{xcolor}
+\RequirePackage[hidelinks]{hyperref}
+\RequirePackage[backend=biber, style=authoryear, maxbibnames=999, mincitenames=999,maxcitenames=999]{biblatex}
 
+\usetikzlibrary{svg.path, calc}
+
+\geometry{margin=1cm, left=2.5cm}
 
 \ExplSyntaxOn
 \newcommand{\LoadTeXGyreFont}[2]{
@@ -22,16 +35,41 @@
 \ExplSyntaxOff
 
 \LoadTeXGyreFont{main}{heros}
-\LoadTeXGyreFont{sans}{termes}
+\LoadTeXGyreFont{sans}{adventor}
 \LoadTeXGyreFont{mono}{cursor}
 \setmathfont{FiraMath-Regular}[Extension=.otf]
 
-\geometry{margin=1in}
+\newfontfamily{\fabrand}{FontAwesome5Brands-Regular-400}[Path=./, Extension=.otf]
+\newfontfamily{\faregular}{FontAwesome5Free-Regular-400}[Path=./, Extension=.otf]
+\newfontfamily{\fasolid}{FontAwesome5Free-Solid-900}[Path=./, Extension=.otf]
+
+
+\newcommand{\CVTitleRule}{%
+    \begin{tikzpicture}[yscale=-1]
+        \draw[fill=black] svg "m 0.13356311,0.2672696 v 3.207234 l 84.18996989,1.08e-4 c 0,0 0.80181,-3.073365 -9.08716,-3.207 -9.88897,-0.133634 -75.10280989,-3.42e-4 -75.10280989,-3.42e-4 z";
+    \end{tikzpicture}%
+}
+
+\newcommand{\CVBibOrnament}{%
+    \begin{tikzpicture}
+        \path[fill=black] svg "M 163.68799,28.48515 C 138.03258,28.48515 108.72398,16.2683 89.17113,16.2683 69.63008,16.2683 0,15.07639 0,15.07639 c 0,0 51.30484,-2.44333 89.17113,-2.44333 37.87219,0 42.76497,-12.21686 70.85171,-12.21686 28.09877,0 36.65058,13.40867 36.65058,13.40867 0,0 -7.3241,14.66028 -32.98543,14.66028 z";
+    \end{tikzpicture}%
+}
+
+\newcommand{\CVGoogleScholarIcon}{%
+    \begin{tikzpicture}[yscale=-1]
+        \path[fill=black] svg "M 29.662256,0.03015639 0.04746573,20.055396 29.662006,36.770226 l 23.1975,-13.21 0.0675,19.8675 h 6.67 v -23.2525 z";
+        \path[fill=black] svg "m 12.615416,31.246366 -0.035,9.97 16.55,9.9225 16.6725,-10.0125 0.21799,-8.66096 -16.87799,8.73096 z";
+    \end{tikzpicture}%
+}
+
+
 
 \ExplSyntaxOn
 
 \tl_new:N \l_cv_tmpa_tl
 \tl_new:N \l_cv_tmpb_tl
+\tl_new:N \l_cv_tmpc_tl
 
 \cs_set:Npn \cv_declare_prop_set:nn #1#2 {
 	\exp_args:Nc \newcommand{SetCV#1}[1]{
@@ -57,9 +95,253 @@
 
 \DeclareCVProperty{Name}
 \DeclareCVProperty[job_title]{JobTitle}
+\DeclareCVProperty{Organization}
 \DeclareCVProperty{Phone}
 \DeclareCVProperty{Email}
+\DeclareCVProperty{Linkedin}
+\DeclareCVProperty{Webpage}
+\DeclareCVProperty{Github}
+\DeclareCVProperty{Address}
+\DeclareCVProperty{Language}
+\DeclareCVProperty[bib_search_name]{BibSearchName}
+\DeclareCVProperty{ORCID}
+\DeclareCVProperty[google_scholar]{GoogleScholar}
 
+\clist_new:N \g_cv_personal_info_clist
+\clist_gset:Nn \g_cv_personal_info_clist {
+    Email,
+    Phone,
+    Language,
+    Webpage,
+    Linkedin,
+    Github,
+    ORCID,
+    GoogleScholar,
+    Address
+}
+
+\prop_new:N \g_cv_personal_info_icon_prop
+\prop_gset_from_keyval:Nn \g_cv_personal_info_icon_prop {
+    Email={\faregular\symbol{"F0E0}},
+    Phone={\fasolid\symbol{"F095}},
+    Webpage={\fasolid\symbol{"F57D}},
+    Linkedin={\fabrand\symbol{"F08C}},
+    Github={\fabrand\symbol{"F09B}},
+    Address={\fasolid\symbol{"E065}},
+    ORCID={\fabrand\symbol{"F8D2}},
+    Language={\fasolid\symbol{"F1AB}},
+    GoogleScholar=\adjustbox{height=1em,width=1em}{\CVGoogleScholarIcon}
+}
+
+
+\seq_new:N \l_cv_tmpa_seq
+
+\renewcommand{\maketitle}{
+    \group_begin:
+    \setstretch{1.0}
+    \par\noindent
+    \begin{minipage}{0.5\linewidth}
+    \par\noindent {\huge \g_cv_name_tl}
+    \par\noindent {\Large \sffamily\color{title-secondary} \g_cv_job_title_tl}
+    \par\noindent {\sffamily\small \color{title-secondary} \g_cv_organization_tl}
+    \end{minipage}
+    \begin{minipage}{0.5\linewidth}
+    \urlstyle{rm}
+    \small
+    
+    \seq_clear:N \l_cv_tmpa_seq
+    
+    \clist_map_inline:Nn \g_cv_personal_info_clist {
+        \prop_get:NnNTF \g_cv_prop_conv_prop {##1} \l_cv_tmpa_tl {
+            \tl_if_empty:cF {\l_cv_tmpa_tl} {
+                \prop_get:NnNTF \g_cv_personal_info_icon_prop {##1} \l_cv_tmpb_tl {
+                    \tl_clear:N \l_cv_tmpc_tl
+                    \tl_put_right:NV \l_cv_tmpc_tl \l_cv_tmpb_tl
+                    \tl_put_right:Nn \l_cv_tmpc_tl {&}
+                    \tl_put_right:No \l_cv_tmpc_tl {\expandafter\csname\l_cv_tmpa_tl \endcsname}
+                    \seq_put_right:NV \l_cv_tmpa_seq \l_cv_tmpc_tl
+                } {
+                    \GenericError{}{no~icon~defined~for~personal~info~field~##1}{}{}
+                }
+            }
+        } {
+            \GenericError{}{no~token~list~variable~defined~for~personal~info~field~##1}{}{}
+        }
+    }
+    
+    \setlength{\tabcolsep}{1mm} 
+    \begin{longtable}[r]{cl}
+    \seq_use:Nn \l_cv_tmpa_seq {\tabularnewline}
+    \end{longtable}
+    \end{minipage}
+    \par
+    \group_end:
+    \vspace*{0.5cm}
+}
+
+\box_new:N \l_cv_tmpa_box
+\dim_new:N \g_cv_title_rule_left_dim 
+\fp_new:N \g_cv_title_rule_total_fp
+\dim_new:N \g_cv_title_rule_margin_dim
+\dim_new:N \g_cv_title_rule_linewidth_dim
+
+\dim_gset:Nn \g_cv_title_rule_margin_dim {0.8mm}
+\dim_gset:Nn \g_cv_title_rule_left_dim {3mm}
+\dim_gset:Nn \g_cv_title_rule_linewidth_dim {3pt}
+\fp_gset:Nn \g_cv_title_rule_total_fp {0.7} % as in \linewidth
+
+\dim_new:N \l_cv_tmpa_dim
+\dim_new:N \l_cv_tmpb_dim
+\dim_new:N \l_cv_tmpc_dim
+
+\cs_set:Npn \cv_title_rule:nn #1#2 {
+    \adjustbox{width={#1},height={#2}}{\CVTitleRule}
+}
+
+\cs_set:Npn \cv_title_with_rule:n #1 {
+    \begin{tikzpicture}
+        \filldraw[fill=section-heading] (0cm,0cm) -- ++ (\fp_use:N \g_cv_title_rule_total_fp \linewidth,0cm) {
+        [rounded~corners=4pt]
+        -- ++ (-0.02\linewidth,\g_cv_title_rule_linewidth_dim)}
+        -- (0cm, \g_cv_title_rule_linewidth_dim) -- cycle;
+        \node[fill=section-heading,
+        outer~sep=0pt,
+        anchor=south~west,
+        inner~sep=\g_cv_title_rule_margin_dim,
+        rounded~corners=2pt
+        ] at (\g_cv_title_rule_left_dim,0cm) {\color{white} #1};
+    \end{tikzpicture}
+}
+
+\titleformat{name=\section}{\bfseries\Large}{}{0pt}{
+    \cv_title_with_rule:n {
+        #1
+    }
+}
+
+\titlespacing{\section}{0pt}{*2}{*0.5}
+
+\cs_set:Npn \cv_doublehref_box:nnn #1#2#3 {
+    \parbox[b][][b]{\l_cv_tmpa_dim}{
+        \setstretch{0.5}
+        \par\noindent\href{#2}{#3}
+        \par\noindent{\tiny\url{#2}}
+        \par
+    }
+}
+
+\newcommand{\doublehref}[2]{
+    \hbox_set:Nn \l_cv_tmpa_box {#1}    
+    \dim_set:Nn \l_cv_tmpa_dim {\box_wd:N \l_cv_tmpa_box}
+    
+    \hbox_set:Nn \l_cv_tmpa_box {#2}    
+    \dim_set:Nn \l_cv_tmpb_dim {\box_wd:N \l_cv_tmpa_box}
+    \dim_set:Nn \l_cv_tmpc_dim {\box_ht:N \l_cv_tmpa_box}
+    
+    \dim_set:Nn \l_cv_tmpa_dim {\dim_max:nn {\l_cv_tmpa_dim} {\l_cv_tmpb_dim}}
+    
+    \hbox_set:Nn \l_cv_tmpa_box {\cv_doublehref_box:nnn {\l_cv_tmpa_dim}{#1}{#2}}
+    \adjustbox{
+    lap=\dim_eval:n {\box_wd:N \l_cv_tmpa_box - \l_cv_tmpb_dim},
+    raise=-\dim_eval:n {\box_ht:N \l_cv_tmpa_box - \l_cv_tmpc_dim}
+    }
+    {\cv_doublehref_box:nnn {\l_cv_tmpa_dim}{#1}{#2}}
+}
+
+%name, time, location
+\DeclareDocumentEnvironment{itemntl}{mmm}{
+\item {\bfseries#1} \hfill {#2} \par
+\par\noindent {#3}
+\par}{}
+
+\newcommand{\CVSkillBlock}[2]{
+\adjustbox{valign=t}{
+    \begin{tikzpicture}
+        \node[
+            text~centered,
+            anchor=north~west,
+            inner~sep=1mm,
+            outer~sep=0pt,
+            fill=skill-block-bg-2,
+            rounded~corners=3pt,
+        ] (n1) at (0,0) {\phantom{#2}};
+        
+        \coordinate (n1b) at ($(n1.south~west)-\fp_eval:n {#1/100}*(n1.south~west)+\fp_eval:n {#1/100}*(n1.south~east)$);
+        \coordinate (n1t) at ($(n1.north~west)-\fp_eval:n {#1/100}*(n1.north~west)+\fp_eval:n {#1/100}*(n1.north~east)$);
+        
+        \draw[draw=none,
+        fill=skill-block-bg-1,
+        rounded~corners=3pt
+        ] (n1.north~west) rectangle (n1b);
+        
+        \node[
+            text~centered,
+            anchor=north~west,
+            inner~sep=1mm,
+            outer~sep=0pt,
+            rounded~corners=3pt
+        ] at (0,0) {\color{white}#2};
+        
+        \coordinate (n2t) at ($(n1.north~west)-0.85*(n1.north~west)+0.85*(n1t)$);
+
+        \node[outer~sep=0pt, 
+        inner~sep=0pt, 
+        anchor=south~east,
+        font=\sffamily\fontsize{2}{1}\selectfont] (n2) at (n2t) {\rule{0pt}{2ex}\phantom{LEVEL}};
+        
+        \draw[draw=none,
+        fill=skill-block-bg-1,
+        ] ($(n2.south~west)+(-2pt,-0.5pt)$) {[rounded~corners=1pt] -- (n2.north~west) -- (n2.north~east)} -- ($(n2.south~east)+(2pt,-0.5pt)$) -- cycle; 
+        
+        \node[outer~sep=0pt, 
+        inner~sep=0pt, 
+        anchor=south~east,
+        font=\sffamily\fontsize{2}{1}\selectfont] at (n2t) {\color{white} LEVEL};
+        
+    \end{tikzpicture}
+}
+}
+
+
+\newcommand{\CVBibYear}[1]{
+    \parbox{\linewidth}{
+    \bgroup
+    \centering\large
+    
+    \adjustbox{width=2cm,height=0.5ex, margin={1mm}~{0mm}, raise=0.45ex}{
+        \CVBibOrnament
+    }
+    #1
+    \adjustbox{width=2cm,height=0.5ex, margin={1mm}~{0mm}, raise=0.45ex, reflect}{
+        \CVBibOrnament
+    }
+    
+    \par
+    \egroup
+    }
+}
+
+\newcommand{\CVPrintBib}[1]{
+    \iow_term:n {Running~Python~bib~organizer}
+    \tl_set:Nx \l_cv_tmpa_tl {python3~bib_organizer.py~#1.bib~'\g_cv_bib_search_name_tl'~#1-organized.bib~#1.vrb} 
+    \iow_term:x {Call~command:~\l_cv_tmpa_tl}
+    \exp_args:NV \sys_get_shell:nnN \l_cv_tmpa_tl {} \l_cv_tmpb_tl
+    \iow_term:x {Python~returns~message:~\l_cv_tmpb_tl}
+    \begin{refsection}[#1-organized.bib]
+        \input{#1.vrb}
+    \end{refsection}
+}
 
 \ExplSyntaxOff
 
+\setlist{left=0mm, topsep=0pt, partopsep=0pt, itemsep=0.5mm}
+
+\newlist{cvbiblist}{itemize}{3}
+\setlist[cvbiblist]{label={},left=0mm, itemindent=-2em}
+
+\definecolor{title-secondary}{gray}{0.5}
+\definecolor{section-heading}{HTML}{000060}
+\definecolor{skill-block-bg-1}{gray}{0.2}
+\definecolor{skill-block-bg-2}{gray}{0.5}
+
+\setstretch{0.5}
