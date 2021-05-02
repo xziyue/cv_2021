@@ -8,20 +8,24 @@
 \RequirePackage{enumitem}
 \RequirePackage{longtable}
 \RequirePackage{adjustbox}
+\RequirePackage{etoolbox}
 \RequirePackage[explicit]{titlesec}
 \RequirePackage{setspace}
 \RequirePackage{xparse}
+\RequirePackage{datetime2}
 \RequirePackage{microtype}
 \RequirePackage{csquotes}
 \RequirePackage[english]{babel}
-\RequirePackage{zref}
+\RequirePackage[user, lastpage, savepos]{zref}
+\RequirePackage{zref-abspos}
 \RequirePackage{xcolor}
 \RequirePackage[hidelinks]{hyperref}
 \RequirePackage[backend=biber, style=authoryear, maxbibnames=999, mincitenames=999,maxcitenames=999]{biblatex}
 
-\usetikzlibrary{svg.path, calc}
+\usetikzlibrary{svg.path, calc, positioning}
 
-\geometry{margin=1cm, left=2.5cm}
+\geometry{margin=1.5cm, left=2.5cm}
+\renewcommand{\headrulewidth}{0pt}
 
 \ExplSyntaxOn
 \newcommand{\LoadTeXGyreFont}[2]{
@@ -213,10 +217,48 @@
     \end{tikzpicture}
 }
 
+\cs_set:Npn \cv_section_zlabel:n #1 {
+    z-cv-section-\int_to_alph:n {#1}
+}
+
+\cs_set:Npn \cv_section_zplabel:n #1 {
+    z-cv-section-pos-\int_to_alph:n {#1}
+}
+
+\cs_set:Npn \cv_section_hlabel:n #1 {
+    cv-section-\int_to_alph:n {#1}
+}
+
+\cs_set:Npn \cv_section_title_cmd_name:n #1 {
+    CVTheSectionTitle\int_to_Alph:n {#1}
+}
+
+
+%\fp_new:N \g_cv_section_title_height_fp
+
 \titleformat{name=\section}{\bfseries\Large}{}{0pt}{
-    \cv_title_with_rule:n {
-        #1
+    \vbox_set:Nn \l_cv_tmpa_box {
+        \cv_title_with_rule:n {
+            #1
+        }
     }
+    \iow_term:x {title~box~height: \dim_eval:n {\box_ht:N \l_cv_tmpa_box}}
+%    \fp_gset:Nn \g_cv_section_title_height_fp {
+%        \fp_max:nn {\dim_to_fp:n {\box_ht:N \l_cv_tmpa_box} + \dim_to_fp:n {\box_dp:N \l_cv_tmpa_box}}
+%            {\g_cv_section_title_height_fp}
+%    }
+    \raisebox{\box_ht:N \l_cv_tmpa_box}{
+        \exp_args:Nx \zsavepos{\cv_section_zplabel:n {\thesection}}
+        \exp_args:Nx \zlabel {\cv_section_zlabel:n {\thesection}}
+        \exp_args:Nx \hypertarget{\cv_section_hlabel:n {\thesection}}{}
+    }
+
+    \box_use:N \l_cv_tmpa_box
+    
+    \tl_set:Nx \l_cv_tmpa_tl {
+        \c_backslash_str gdef \c_backslash_str \cv_section_title_cmd_name:n {\thesection} {#1}
+    }
+    \exp_args:NV \cv_write_aux:n \l_cv_tmpa_tl
 }
 
 \titlespacing{\section}{0pt}{*2}{*0.5}
@@ -231,7 +273,7 @@
 }
 
 \newcommand{\doublehref}[2]{
-    \hbox_set:Nn \l_cv_tmpa_box {#1}    
+    \hbox_set:Nn \l_cv_tmpa_box {\tl_to_str:n {#1}}    
     \dim_set:Nn \l_cv_tmpa_dim {\box_wd:N \l_cv_tmpa_box}
     
     \hbox_set:Nn \l_cv_tmpa_box {#2}    
@@ -306,7 +348,7 @@
 \newcommand{\CVBibYear}[1]{
     \parbox{\linewidth}{
     \bgroup
-    \centering\large
+    \centering\large\sffamily
     
     \adjustbox{width=2cm,height=0.5ex, margin={1mm}~{0mm}, raise=0.45ex}{
         \CVBibOrnament
@@ -332,6 +374,171 @@
     \end{refsection}
 }
 
+\cs_set:Npn \cv_write_aux:n #1 {
+    \immediate\write\@auxout{#1}
+}
+
+\makeatletter
+\AtEndDocument{
+    \tl_set:Nx \l_cv_tmpa_tl {
+        \c_backslash_str gdef \c_backslash_str CVLastSection {\thesection}
+    }
+    \exp_args:NV \cv_write_aux:n \l_cv_tmpa_tl
+}
+\makeatother
+
+\int_new:N \l_cv_tmpa_int
+\fp_new:N \l_cv_tmpa_fp
+
+\cs_generate_variant:Nn \intarray_gset:Nnn {Nnx}
+
+\fp_new:N \g_cv_body_top_y_fp
+
+\makeatletter
+
+\AtBeginDocument{
+    
+    \zlabel{FirstPage}
+    \fp_gset:Nn \g_cv_body_top_y_fp {
+        \dim_to_fp:n {\zref@absposy{FirstPage}{body}{top} sp}
+    }
+    %\int_show:N \g_cv_body_top_y_int
+    
+    \cs_if_exist:NT \CVLastSection {
+        % create two int arrays for section boundary detection
+        \intarray_new:Nn \g_cv_section_a_intarray {\CVLastSection}
+        \intarray_new:Nn \g_cv_section_b_intarray {\CVLastSection}
+        % find boundaries
+        \intarray_gset:Nnx \g_cv_section_a_intarray {1} {
+            \zref@extract {\cv_section_zlabel:n {1}}{page}
+        }
+        \int_step_inline:nnn {2} {\CVLastSection} {
+            \intarray_gset:Nnn \g_cv_section_a_intarray {#1} {
+                \zref@extract {\cv_section_zlabel:n {#1}}{page}
+            }
+            
+            % get y value of the top of this section
+            \fp_set:Nn \l_cv_tmpa_fp {
+                \dim_to_fp:n {\zposy{\cv_section_zplabel:n {#1}} sp}
+            }
+            \iow_term:x {
+                checking~section~#1: top=\fp_use:N \l_cv_tmpa_fp; page=\fp_use:N \g_cv_body_top_y_fp; bls=\fp_eval:n {\dim_to_fp:n {\baselineskip}};
+            }
+            \fp_compare:nTF {abs(\l_cv_tmpa_fp -  \g_cv_body_top_y_fp) < \dim_to_fp:n {\baselineskip}} {
+                \intarray_gset:Nnn \g_cv_section_b_intarray {#1 - 1} {
+                    \intarray_item:Nn \g_cv_section_a_intarray {#1} - 1
+                }
+            } {
+                \intarray_gset:Nnn \g_cv_section_b_intarray {#1 - 1} {
+                    \intarray_item:Nn \g_cv_section_a_intarray {#1}
+                }
+            }
+            
+        }
+        
+        \intarray_gset:Nnn \g_cv_section_b_intarray {\CVLastSection} {
+            \zref@extract {LastPage}{page}
+        }
+%        
+%        \intarray_show:N \g_cv_section_a_intarray 
+%        \intarray_show:N \g_cv_section_b_intarray 
+    }
+}
+\makeatother
+
+\tikzset{
+    cvsidebarbase/.style={
+        outer~sep=0pt,
+        inner~sep=1mm,
+        rounded~corners=3pt,
+        fill=sidebar-normal,
+        anchor=south~east,
+        rotate=90,
+        font=\color{white}\sffamily\bfseries\small,
+        minimum~height=3.5ex,
+        text~centered
+    },
+    cvsidebaractive/.style={
+        cvsidebarbase,
+        inner~sep=2mm,
+        minimum~height=4.5ex,
+        fill=sidebar-highlight
+    }
+}
+
+%#1: page number
+%#2: section number
+\cs_set:Npn \cv_define_sidebar_style:nn #1#2 {
+    \int_compare:nTF { \intarray_item:Nn \g_cv_section_a_intarray {#2} <= #1 <= 
+        \intarray_item:Nn \g_cv_section_b_intarray {#2}
+    } {
+        \tikzset{
+            cvsidebarcurrentstyle/.style={cvsidebaractive}
+        }
+    } {
+        \tikzset{
+            cvsidebarcurrentstyle/.style={cvsidebarbase}
+        }
+    }
+}
+
+\newcommand{\makeepilogue}{
+    \vfill
+    \begin{center}
+        \tiny
+        \DTMsetstyle{iso}
+        \sys_get_shell:nnN {python3~now.py} {} \l_cv_tmpa_tl
+        \par Compilation~timestamp:~\l_cv_tmpa_tl
+        \par Source:~\url{https://github.com/xziyue/cv_2021}
+    \end{center}
+}
+
+
+\newcommand{\tikzpagelayout}{
+%\tpshowframes
+%\tikzpageputanchors
+    \node [outer~sep=0,inner~sep=0,anchor=base] at (page.footer~center) {\thepage};
+    
+    \cs_if_exist:NT \CVLastSection {
+        
+        \begin{scope}
+            \cv_define_sidebar_style:nn {\thepage} {1}
+            \node[cvsidebarcurrentstyle, yshift=-4mm] (n1) at (page.left~north) {
+                \exp_args:Nxx \hyperlink {\cv_section_hlabel:n {1}} {
+                    \use:c {\cv_section_title_cmd_name:n {1}}
+                }
+            };
+            
+            \int_step_variable:nnNn {2} {\CVLastSection} \l_cv_tmpa_tl {
+                \cv_define_sidebar_style:nn {\thepage} {\l_cv_tmpa_tl}
+                \node[cvsidebarcurrentstyle, 
+                    anchor=south~east,
+                    baseline=n1.base,
+                    ] (n\l_cv_tmpa_tl) 
+                    at ($(n\int_eval:n {\l_cv_tmpa_tl - 1}.south~west)+(0mm,-1mm)$)
+                     {
+                    \exp_args:Nxx \hyperlink {\cv_section_hlabel:n {\l_cv_tmpa_tl}} {
+                        \use:c {\cv_section_title_cmd_name:n {\l_cv_tmpa_tl}}
+                    }
+                };
+            }
+            
+            \int_compare:nNnT {\CVLastSection} > {1} {
+                \draw[line~width=2pt,
+                line~cap=round,
+                draw=sidebar-normal] (n1.south~east) -- (n\CVLastSection.south~west);
+            }
+            
+        \end{scope}
+        
+    }
+    
+    
+    
+}
+
+\pagestyle{plain}
+
 \ExplSyntaxOff
 
 \setlist{left=0mm, topsep=0pt, partopsep=0pt, itemsep=0.5mm}
@@ -341,6 +548,8 @@
 
 \definecolor{title-secondary}{gray}{0.5}
 \definecolor{section-heading}{HTML}{000060}
+\definecolor{sidebar-normal}{gray}{0.2}
+\definecolor{sidebar-highlight}{gray}{0.7}
 \definecolor{skill-block-bg-1}{gray}{0.2}
 \definecolor{skill-block-bg-2}{gray}{0.5}
 

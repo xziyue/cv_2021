@@ -2,7 +2,8 @@
 
 \documentclass[letterpaper, 11pt]{article}
 \usepackage{alancv}
-\usepackage{datetime2}
+
+\addbibresource{other_ref.bib}
 
 \begin{document}
 
@@ -14,6 +15,7 @@
 School of Electrical and Computer Engineering,\\
 Purdue University--West Lafayette}
 \SetCVLinkedin{\url{https://www.linkedin.com/in/ziyue-alan-xiang/}}
+\SetCVWebpage{\url{https://www.alanshawn.com}}
 \SetCVGithub{\url{https://github.com/xziyue}}
 \SetCVAddress{West Lafayette, Indiana, USA}
 \SetCVLanguage{Chinese Mandarin, English, Cantonese}
@@ -48,9 +50,8 @@ Purdue University--West Lafayette}
 
 \end{itemize}
 
+\section{Experience}
 
-
-\section{Work Experience}
 
 \begin{itemize}
 
@@ -89,8 +90,31 @@ Purdue University--West Lafayette}
 
 \CVPrintBib{ref}
 
+\section{Projects}
 
-\section{Online Projects}
+\begin{itemize}
+\item \doublehref{https://www.alanshawn.com/latex3-tutorial/}{\textbf{\LaTeX~3 Tutorial}}
+\par One of the first practical tutorials for the \LaTeX~3 programming language
+
+\item \doublehref{https://www.alanshawn.com/pyopengl_series/}{\textbf{The PyCG Series}}
+\par A series of experiments with computer graphics algorithms in Python with the help of PyOpenGL and other tools
+
+\item \doublehref{https://www.ctan.org/pkg/luaprogtable}{\textbf{The \textit{luaprogtable} package}}
+\par A Lua\TeX package that provides programmable table interface
+
+\item \doublehref{https://www.alanshawn.com/tech/2020/02/20/mf-perf-eval.html}{\textbf{Better performance evaluation for image manipulation detection}}
+\par Uncovering the problems of existing performance evaluation methods for image manipulation detection, calling for better techniques
+
+\item \doublehref{https://www.alanshawn.com/vpn-demo/}{\textbf{VPN mechanism demonstration}}
+
+\item \doublehref{https://github.com/xziyue/wpantap}{\textbf{WPANTAP: a TAP interface for Linux-wpan}}
+
+\item \doublehref{https://github.com/xziyue/robust_mnist_feature_py}{\textbf{Properties of robust features from MNIST}}
+\par Extracting and studying the properties of robust features from the MNIST dataset, inspired by {\sffamily\small\fullcite{ilyas2019adversarial}}
+
+
+
+\end{itemize}
 
 \section{Skills}
 
@@ -98,6 +122,8 @@ Purdue University--West Lafayette}
 \par\noindent \CVSkillBlock{80}{Data Mining}~\CVSkillBlock{85}{Data Visualization}~\CVSkillBlock{85}{Machine Learning}~\CVSkillBlock{80}{Computer Vision}~\CVSkillBlock{75}{Linux Security}~\CVSkillBlock{75}{Cybersecurity}
 \par\noindent \CVSkillBlock{75}{tensorflow}~\CVSkillBlock{70}{Apache Spark}
 
-\DTMNow
+
+\makeepilogue
+
 
 \end{document}
