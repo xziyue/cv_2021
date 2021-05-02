@@ -110,6 +110,7 @@
 \DeclareCVProperty[bib_search_name]{BibSearchName}
 \DeclareCVProperty{ORCID}
 \DeclareCVProperty[google_scholar]{GoogleScholar}
+\DeclareCVProperty[texse]{TeXSE}
 
 \clist_new:N \g_cv_personal_info_clist
 \clist_gset:Nn \g_cv_personal_info_clist {
@@ -119,6 +120,7 @@
     Webpage,
     Linkedin,
     Github,
+    TeXSE,
     ORCID,
     GoogleScholar,
     Address
@@ -134,7 +136,8 @@
     Address={\fasolid\symbol{"E065}},
     ORCID={\fabrand\symbol{"F8D2}},
     Language={\fasolid\symbol{"F1AB}},
-    GoogleScholar=\adjustbox{height=1em,width=1em}{\CVGoogleScholarIcon}
+    GoogleScholar=\adjustbox{height=1em,width=1em}{\CVGoogleScholarIcon},
+    TeXSE={\adjustbox{raise=0.5ex,width=1em, height=0.7em}{\bfseries \{TeX\}}}
 }
 
 
@@ -212,7 +215,8 @@
         outer~sep=0pt,
         anchor=south~west,
         inner~sep=\g_cv_title_rule_margin_dim,
-        rounded~corners=2pt
+        rounded~corners=2pt,
+        minimum~height=3ex,
         ] at (\g_cv_title_rule_left_dim,0cm) {\color{white} #1};
     \end{tikzpicture}
 }
@@ -344,9 +348,13 @@
 }
 }
 
+\newcommand{\CVSubHeading}[1]{
+    \CVBibYear{#1}
+}
 
 \newcommand{\CVBibYear}[1]{
     \parbox{\linewidth}{
+    \smallskip
     \bgroup
     \centering\large\sffamily
     
@@ -359,6 +367,7 @@
     }
     
     \par
+    \smallskip
     \egroup
     }
 }
