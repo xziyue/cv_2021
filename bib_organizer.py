@@ -3,6 +3,11 @@ import sys
 import os
 import itertools
 
+# arg1: input file
+# arg2: search string
+# arg3: output name of organized bib file
+# arg4: output name of temporaray LaTeX source file
+
 if len(sys.argv) != 5:
     raise RuntimeError('This program expects 4 arguments')
 
@@ -12,7 +17,11 @@ if not os.path.exists(sys.argv[1]):
 with open(sys.argv[1], 'r') as infile:
     bib_db = bibtexparser.load(infile)
 
-bib_db.entries.sort(key=lambda x : int(x['year']), reverse=True)
+title_to_old_ind = dict()
+for ind, entry in enumerate(bib_db.entries):
+    title_to_old_ind[entry['title']] = ind
+
+bib_db.entries.sort(key=lambda x : (int(x['year']), -title_to_old_ind[x['title']]), reverse=True)
 
 search_names = sys.argv[2].split(';')
 for i in range(len(search_names)):
